@@ -84,7 +84,7 @@
 #define PANDAR128_UNIT_WITHOUT_CONFIDENCE_SIZE (DISTANCE_SIZE + INTENSITY_SIZE)
 #define PANDAR128_UNIT_WITH_CONFIDENCE_SIZE (DISTANCE_SIZE + INTENSITY_SIZE + CONFIDENCE_SIZE)
 #define PANDAR128_BLOCK_SIZE \
-  (PANDAR128_UNIT_WITHOUT_CONFIDENCE_SIZE* PANDAR128_LASER_NUM + PANDAR128_AZIMUTH_SIZE)
+  (PANDAR128_UNIT_WITHOUT_CONFIDENCE_SIZE * PANDAR128_LASER_NUM + PANDAR128_AZIMUTH_SIZE)
 #define PANDAR128_TAIL_RESERVED1_SIZE (3)
 #define PANDAR128_TAIL_RESERVED2_SIZE (3)
 #define PANDAR128_SHUTDOWN_FLAG_SIZE (1)
@@ -117,18 +117,21 @@
 #define MOTOR_SPEED_900 (900)
 #define MOTOR_SPEED_1200 (1200)
 
-typedef struct __attribute__((__packed__)) Pandar128Unit_s {
+typedef struct __attribute__((__packed__)) Pandar128Unit_s
+{
   uint16_t u16Distance;
   uint8_t u8Intensity;
   // uint8_t  u8Confidence;
 } Pandar128Unit;
 
-typedef struct __attribute__((__packed__)) Pandar128Block_s {
+typedef struct __attribute__((__packed__)) Pandar128Block_s
+{
   uint16_t fAzimuth;
   Pandar128Unit units[PANDAR128_LASER_NUM];
 } Pandar128Block;
 
-typedef struct __attribute__((__packed__)) Pandar128HeadVersion13_s {
+typedef struct __attribute__((__packed__)) Pandar128HeadVersion13_s
+{
   uint16_t u16Sob;
   uint8_t u8VersionMajor;
   uint8_t u8VersionMinor;
@@ -141,7 +144,8 @@ typedef struct __attribute__((__packed__)) Pandar128HeadVersion13_s {
   uint16_t u16Reserve1;
 } Pandar128HeadVersion13;
 
-typedef struct __attribute__((__packed__)) Pandar128HeadVersion14_s {
+typedef struct __attribute__((__packed__)) Pandar128HeadVersion14_s
+{
   uint16_t u16Sob;
   uint8_t u8VersionMajor;
   uint8_t u8VersionMinor;
@@ -160,7 +164,8 @@ typedef struct __attribute__((__packed__)) Pandar128HeadVersion14_s {
 
 } Pandar128HeadVersion14;
 
-typedef struct __attribute__((__packed__)) PandarQT128Head_s {
+typedef struct __attribute__((__packed__)) PandarQT128Head_s
+{
   uint16_t u16Sob;
   uint8_t u8VersionMajor;
   uint8_t u8VersionMinor;
@@ -179,7 +184,8 @@ typedef struct __attribute__((__packed__)) PandarQT128Head_s {
 
 } PandarQT128Head;
 
-typedef struct __attribute__((__packed__)) Pandar128TailVersion13_s {
+typedef struct __attribute__((__packed__)) Pandar128TailVersion13_s
+{
   uint8_t nReserved1[3];
   uint8_t nReserved2[3];
   uint8_t nShutdownFlag;
@@ -192,7 +198,8 @@ typedef struct __attribute__((__packed__)) Pandar128TailVersion13_s {
   uint32_t nSeqNum;
 } Pandar128TailVersion13;
 
-typedef struct __attribute__((__packed__)) Pandar128TailVersion14_s {
+typedef struct __attribute__((__packed__)) Pandar128TailVersion14_s
+{
   uint8_t nReserved1[3];
   uint8_t nReserved2[3];
   uint8_t nReserved3[3];
@@ -206,7 +213,8 @@ typedef struct __attribute__((__packed__)) Pandar128TailVersion14_s {
   uint32_t nSeqNum;
 } Pandar128TailVersion14;
 
-typedef struct __attribute__((__packed__)) PandarQT128Tail_s {
+typedef struct __attribute__((__packed__)) PandarQT128Tail_s
+{
   uint8_t nReserved1[3];
   uint8_t nReserved2[3];
   uint8_t nReserved3[3];
@@ -220,13 +228,15 @@ typedef struct __attribute__((__packed__)) PandarQT128Tail_s {
   uint32_t nSeqNum;
 } PandarQT128Tail;
 
-typedef struct __attribute__((__packed__)) Pandar128PacketVersion13_t {
+typedef struct __attribute__((__packed__)) Pandar128PacketVersion13_t
+{
   Pandar128HeadVersion13 head;
   Pandar128Block blocks[PANDAR128_BLOCK_NUM];
   Pandar128TailVersion13 tail;
 } Pandar128PacketVersion13;
 
-struct PandarGPS_s {
+struct PandarGPS_s
+{
   uint16_t flag;
   uint16_t year;
   uint16_t month;
@@ -239,87 +249,104 @@ struct PandarGPS_s {
 
 typedef std::array<PandarPacket, 36000> PktArray;
 
-typedef struct PacketsBuffer_s {
-    PktArray m_buffers{};
-    PktArray::iterator m_iterPush;
-    PktArray::iterator m_iterTaskBegin;
-    PktArray::iterator m_iterTaskEnd;
-    int m_stepSize;
-    bool m_startFlag;
-    inline PacketsBuffer_s() {
-        m_stepSize = TASKFLOW_STEP_SIZE;
+typedef struct PacketsBuffer_s
+{
+  PktArray m_buffers{};
+  PktArray::iterator m_iterPush;
+  PktArray::iterator m_iterTaskBegin;
+  PktArray::iterator m_iterTaskEnd;
+  int m_stepSize;
+  bool m_startFlag;
+  inline PacketsBuffer_s()
+  {
+    m_stepSize = TASKFLOW_STEP_SIZE;
+    m_iterPush = m_buffers.begin();
+    m_iterTaskBegin = m_buffers.begin();
+    m_iterTaskEnd = m_iterTaskBegin + m_stepSize;
+    m_startFlag = false;
+  }
+
+  inline int push_back(PandarPacket pkt)
+  {
+    if (!m_startFlag)
+    {
+      *(m_iterPush++) = pkt;
+      m_startFlag = true;
+      return 1;
+    }
+    else
+    {
+      if (m_buffers.end() == m_iterPush)
+      {
         m_iterPush = m_buffers.begin();
-        m_iterTaskBegin = m_buffers.begin();
-        m_iterTaskEnd = m_iterTaskBegin + m_stepSize;
-        m_startFlag = false;
-    }
-
-    inline int push_back(PandarPacket pkt) {
-        if(!m_startFlag) {
-			*(m_iterPush++) = pkt;
-			m_startFlag = true;
-          	return 1;
-        } 
-		else {
-          	if(m_buffers.end() == m_iterPush) {
-            	m_iterPush = m_buffers.begin();
-          	}
-			static bool lastOverflowed = false;
-			if(m_iterPush == m_iterTaskBegin) {
-				static uint32_t tmp = m_iterTaskBegin - m_buffers.begin();
-				if(m_iterTaskBegin - m_buffers.begin() != tmp) {
-					printf("buffer don't have space!,%d\n",m_iterTaskBegin - m_buffers.begin());
-					tmp = m_iterTaskBegin - m_buffers.begin();
-				}
-				lastOverflowed = true;
-				return 0;
-			}
-			if(lastOverflowed) {
-				lastOverflowed = false;
-				printf("buffer recovered\n");
-			}
-			*(m_iterPush++) = pkt;
-			return 1;
-        }
       }
-
-    inline bool hasEnoughPackets() {
-      return ((m_iterPush > m_iterTaskBegin && m_iterPush > m_iterTaskEnd) ||
-              (m_iterPush < m_iterTaskBegin && m_iterPush < m_iterTaskEnd));
+      static bool lastOverflowed = false;
+      if (m_iterPush == m_iterTaskBegin)
+      {
+        static uint32_t tmp = m_iterTaskBegin - m_buffers.begin();
+        if (m_iterTaskBegin - m_buffers.begin() != tmp)
+        {
+          printf("buffer don't have space!,%ld\n", m_iterTaskBegin - m_buffers.begin());
+          tmp = m_iterTaskBegin - m_buffers.begin();
+        }
+        lastOverflowed = true;
+        return 0;
+      }
+      if (lastOverflowed)
+      {
+        lastOverflowed = false;
+        printf("buffer recovered\n");
+      }
+      *(m_iterPush++) = pkt;
+      return 1;
     }
+  }
 
-    inline PktArray::iterator getTaskBegin() { return m_iterTaskBegin; }
-    inline PktArray::iterator getTaskEnd() { return m_iterTaskEnd; }
-	inline void moveTaskEnd(PktArray::iterator iter) {
-		m_iterTaskEnd = iter;
-		// printf("push: %d, begin: %d, end: %d\n",m_iterPush-m_buffers.begin(),m_iterTaskBegin-m_buffers.begin(),m_iterTaskEnd-m_buffers.begin());
-		}
-    inline void creatNewTask() {
-		if(m_buffers.end() == m_iterTaskEnd) {
-			m_iterTaskBegin = m_buffers.begin();
-			m_iterTaskEnd = m_iterTaskBegin + m_stepSize;
-		} 
-		else if((m_buffers.end() - m_iterTaskEnd) < m_stepSize) {
-			m_iterTaskBegin = m_iterTaskEnd;
-			m_iterTaskEnd = m_buffers.end();
-		}
-		else {
-			// printf("add step\n");
-			m_iterTaskBegin = m_iterTaskEnd;
-			m_iterTaskEnd = m_iterTaskBegin + m_stepSize;
-		}
+  inline bool hasEnoughPackets()
+  {
+    return ((m_iterPush > m_iterTaskBegin && m_iterPush > m_iterTaskEnd) ||
+            (m_iterPush < m_iterTaskBegin && m_iterPush < m_iterTaskEnd));
+  }
+
+  inline PktArray::iterator getTaskBegin() { return m_iterTaskBegin; }
+  inline PktArray::iterator getTaskEnd() { return m_iterTaskEnd; }
+  inline void moveTaskEnd(PktArray::iterator iter)
+  {
+    m_iterTaskEnd = iter;
+    // printf("push: %d, begin: %d, end: %d\n",m_iterPush-m_buffers.begin(),m_iterTaskBegin-m_buffers.begin(),m_iterTaskEnd-m_buffers.begin());
+  }
+  inline void creatNewTask()
+  {
+    if (m_buffers.end() == m_iterTaskEnd)
+    {
+      m_iterTaskBegin = m_buffers.begin();
+      m_iterTaskEnd = m_iterTaskBegin + m_stepSize;
     }
+    else if ((m_buffers.end() - m_iterTaskEnd) < m_stepSize)
+    {
+      m_iterTaskBegin = m_iterTaskEnd;
+      m_iterTaskEnd = m_buffers.end();
+    }
+    else
+    {
+      // printf("add step\n");
+      m_iterTaskBegin = m_iterTaskEnd;
+      m_iterTaskEnd = m_iterTaskBegin + m_stepSize;
+    }
+  }
 } PacketsBuffer;
 
 typedef PointXYZIT PPoint;
 typedef pcl::PointCloud<PPoint> PPointCloud;
-typedef struct RedundantPoint_s {
+typedef struct RedundantPoint_s
+{
   int index;
   PPoint point;
 } RedundantPoint;
 
-class PandarSwiftSDK {
- public:
+class PandarSwiftSDK
+{
+public:
   /**
    * @brief Constructor
    * @param deviceipaddr  	  The ip of the device
@@ -341,81 +368,80 @@ class PandarSwiftSDK {
    *        publishmode       The mode of publish
    *        datatype          The model of input data
    */
-	PandarSwiftSDK(std::string deviceipaddr, uint16_t lidarport, uint16_t gpsport, std::string frameid, std::string correctionfile, std::string firtimeflie, std::string pcapfile, \
-								boost::function<void(boost::shared_ptr<PPointCloud>, double)> pclcallback, \
-								boost::function<void(PandarPacketsArray*)> rawcallback, \
-								boost::function<void(double)> gpscallback, \
-								std::string certFile, std::string privateKeyFile, std::string caFile, \
-								int startangle, int timezone, std::string publishmode, bool coordinateCorrectionFlag, std::string datatype=LIDAR_DATA_TYPE);
-	~PandarSwiftSDK() {}
+  PandarSwiftSDK(std::string deviceipaddr, uint16_t lidarport, uint16_t gpsport, std::string frameid, std::string correctionfile, std::string firtimeflie, std::string pcapfile,
+                 boost::function<void(boost::shared_ptr<PPointCloud>, double)> pclcallback,
+                 boost::function<void(PandarPacketsArray *)> rawcallback,
+                 boost::function<void(double)> gpscallback,
+                 std::string certFile, std::string privateKeyFile, std::string caFile,
+                 int startangle, int timezone, std::string publishmode, bool coordinateCorrectionFlag, std::string datatype = LIDAR_DATA_TYPE);
+  ~PandarSwiftSDK() {}
 
-	void driverReadThread();
-	void publishRawDataThread();
-	void processGps(PandarGPS *gpsMsg);
-	void pushLiDARData(PandarPacket packet);
-	int processLiDARData();
-	void publishPointsThread();
+  void driverReadThread();
+  void publishRawDataThread();
+  void processGps(PandarGPS *gpsMsg);
+  void pushLiDARData(PandarPacket packet);
+  int processLiDARData();
+  void publishPointsThread();
   void stop();
 
- private:
-
-	int parseData(Pandar128PacketVersion13 &pkt, const uint8_t *buf, const int len);
+private:
+  int parseData(Pandar128PacketVersion13 &pkt, const uint8_t *buf, const int len);
   void calcPointXYZIT(PandarPacket &pkt, int cursor);
   void calcQT128PointXYZIT(PandarPacket &pkt, int cursor);
   void doTaskFlow(int cursor);
-	void loadOffsetFile(std::string file);
-	void loadCorrectionFile();
-	int loadCorrectionString(std::string correctionstring);
-	int checkLiadaMode();
-	void init();
-	void changeAngleSize();
-	void changeReturnBlockSize();
-	void moveTaskEndToStartAngle();
+  void loadOffsetFile(std::string file);
+  void loadCorrectionFile();
+  int loadCorrectionString(std::string correctionstring);
+  int checkLiadaMode();
+  void init();
+  void changeAngleSize();
+  void changeReturnBlockSize();
+  void moveTaskEndToStartAngle();
   void checkClockwise();
   void SetEnvironmentVariableTZ();
   bool isNeedPublish();
 
   pthread_mutex_t m_RedundantPointLock;
-	boost::shared_ptr<PandarSwiftDriver> m_spPandarDriver;
-  	LasersTSOffset m_objLaserOffset;
-	boost::function<void(boost::shared_ptr<PPointCloud> cld, double timestamp)> m_funcPclCallback;
-	boost::function<void(double timestamp)> m_funcGpsCallback;
-	std::array<boost::shared_ptr<PPointCloud>, 2> m_OutMsgArray;
+  boost::shared_ptr<PandarSwiftDriver> m_spPandarDriver;
+  LasersTSOffset m_objLaserOffset;
+  boost::function<void(boost::shared_ptr<PPointCloud> cld, double timestamp)> m_funcPclCallback;
+  boost::function<void(double timestamp)> m_funcGpsCallback;
+  std::array<boost::shared_ptr<PPointCloud>, 2> m_OutMsgArray;
   std::vector<RedundantPoint> m_RedundantPointBuffer;
-	PacketsBuffer m_PacketsBuffer;
-	double m_dTimestamp;
-	int m_iLidarRotationStartAngle;
-    int m_iTimeZoneSecond;
-	float m_fCosAllAngle[CIRCLE];
-	float m_fSinAllAngle[CIRCLE];
-	float m_fElevAngle[PANDAR128_LASER_NUM];
-	float m_fHorizatalAzimuth[PANDAR128_LASER_NUM];
-	std::string m_sFrameId;
-	std::string m_sLidarFiretimeFile;
-	std::string m_sLidarCorrectionFile;
-	std::string m_sPublishmodel;
+  PacketsBuffer m_PacketsBuffer;
+  double m_dTimestamp;
+  int m_iLidarRotationStartAngle;
+  int m_iTimeZoneSecond;
+  float m_fCosAllAngle[CIRCLE];
+  float m_fSinAllAngle[CIRCLE];
+  float m_fElevAngle[PANDAR128_LASER_NUM];
+  float m_fHorizatalAzimuth[PANDAR128_LASER_NUM];
+  std::string m_sFrameId;
+  std::string m_sLidarFiretimeFile;
+  std::string m_sLidarCorrectionFile;
+  std::string m_sPublishmodel;
   boost::thread *m_driverReadThread;
   boost::thread *m_processLiDARDataThread;
   boost::thread *m_publishPointsThread;
   boost::thread *m_publishRawDataThread;
-	int m_iWorkMode;
-	int m_iReturnMode;
-	int m_iMotorSpeed;
+  int m_iWorkMode;
+  int m_iReturnMode;
+  int m_iMotorSpeed;
   int m_iLaserNum;
-	int m_iAngleSize;  // 10->0.1degree,20->0.2degree
-	int m_iReturnBlockSize;
-	bool m_bPublishPointsFlag;
-	int m_iPublishPointsIndex;
-	void *m_pTcpCommandClient;
-	std::string m_sDeviceIpAddr;
-	std::string m_sPcapFile;
-	std::string m_sSdkVersion;
-	uint8_t m_u8UdpVersionMajor;
-	uint8_t m_u8UdpVersionMinor;
+  int m_iAngleSize; // 10->0.1degree,20->0.2degree
+  int m_iReturnBlockSize;
+  bool m_bPublishPointsFlag;
+  int m_iPublishPointsIndex;
+  void *m_pTcpCommandClient;
+  std::string m_sDeviceIpAddr;
+  std::string m_sPcapFile;
+  std::string m_sSdkVersion;
+  uint8_t m_u8UdpVersionMajor;
+  uint8_t m_u8UdpVersionMinor;
   int m_iFirstAzimuthIndex;
   int m_iLastAzimuthIndex;
   bool m_bClockwise;
   bool m_bCoordinateCorrectionFlag;
 };
 
-#endif  // _PANDAR_POINTCLOUD_Pandar128SDK_H_
+#endif // _PANDAR_POINTCLOUD_Pandar128SDK_H_

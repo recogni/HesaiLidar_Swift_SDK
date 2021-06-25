@@ -24,68 +24,65 @@
 
 #include <pcl/point_types.h>
 
-  /** Euclidean Pandar128 coordinate, including intensity and ring number. */
-  struct PointXYZIR
-  {
-    PCL_ADD_POINT4D;                    // quad-word XYZ
-    float    intensity;                 ///< laser intensity reading
-    uint16_t ring;                      ///< laser ring number
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW     // ensure proper alignment
-  } EIGEN_ALIGN16;
+/** Euclidean Pandar128 coordinate, including intensity and ring number. */
+struct PointXYZIR
+{
+  PCL_ADD_POINT4D;                // quad-word XYZ
+  float intensity;                ///< laser intensity reading
+  uint16_t ring;                  ///< laser ring number
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // ensure proper alignment
+} EIGEN_ALIGN16;
 
-
-struct PointXYZIT {
-    PCL_ADD_POINT4D
-    float intensity;
-    double timestamp;
-    uint16_t ring;                      ///< laser ring number
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
+struct PointXYZIT
+{
+  PCL_ADD_POINT4D
+  float intensity;
+  double timestamp;
+  uint16_t ring;                  ///< laser ring number
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
 } EIGEN_ALIGN16;
 // enforce SSE padding for correct memory alignment
 
-struct PointXYZITd {
-    double x;
-    double y;
-    double z;
-    float intensity;
-    double timestamp;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
+struct PointXYZITd
+{
+  double x;
+  double y;
+  double z;
+  float intensity;
+  double timestamp;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
 } EIGEN_ALIGN16;
 // enforce SSE padding for correct memory alignment
 
-struct PointXYZd {
-    double x;
-    double y;
-    double z;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
+struct PointXYZd
+{
+  double x;
+  double y;
+  double z;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
 } EIGEN_ALIGN16;
 
-struct PointXYZRGBd {
-    double x;
-    double y;
-    double z;
-    PCL_ADD_RGB
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // make sure our new allocators are aligned
+struct PointXYZRGBd
+{
+  double x;
+  double y;
+  double z;
+  PCL_ADD_RGB
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
 } EIGEN_ALIGN16;
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIR,
-                                  (float, x, x)
-                                  (float, y, y)
-                                  (float, z, z)
-                                  (float, intensity, intensity)
-                                  (uint16_t, ring, ring))
+                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(std::uint16_t, ring, ring))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIT,
-                                  (float, x, x)(float, y, y)(float, z, z)
-                                  (float, intensity, intensity)(double, timestamp, timestamp)(uint16_t, ring, ring))
+                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(double, timestamp, timestamp)(std::uint16_t, ring, ring))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZITd,
                                   (double, x, x)(double, y, y)(double, z, z)(float, intensity, intensity)(double, timestamp,
-                                          timestamp))
+                                                                                                          timestamp))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZd,
                                   (double, x, x)(double, y, y)(double, z, z))
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGBd,
                                   (double, x, x)(double, y, y)(double, z, z)(float, rgb, rgb))
 #endif // __PANDAR_POINTCLOUD_POINT_TYPES_H
-
