@@ -36,6 +36,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OPENSSL_LIBRARIES}
     Boost::thread
     pcap
+    zstd
 )
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
