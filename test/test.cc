@@ -14,48 +14,64 @@
  * limitations under the License.
  *****************************************************************************/
 #include "pandarSwiftSDK.h"
-// #define PRINT_FLAG
 
-#define PCD_FILE_WRITE_FLAG (false) //false: don't save point cloud data;
-                                    //true : save a frame of point cloud data
-int frameItem = 0;
+#include <string>
+#include <thread>
 
-void gpsCallback(double timestamp) {
-#ifdef PRINT_FLAG    
-    printf("gps: %lf\n", timestamp);
-#endif    
+void gpsCallback(double timestamp)
+{
 }
 
-void lidarCallback(boost::shared_ptr<PPointCloud> cld, double timestamp) {
-#ifdef PRINT_FLAG       
-    printf("timestamp: %lf,point_size: %ld\n", timestamp, cld->points.size());
-#endif
-    //Debug code,save the tenth frame data to the local pcd file to verify the correctness of the data
-    if(PCD_FILE_WRITE_FLAG) {
-        frameItem++;
-        if(10 == frameItem) {
-            printf("write pcd file\n");
-            pcl::PCDWriter writer;
-            writer.write("P128Pcd.pcd", *cld);
-        }
-    }   
+void writePCDthread(std::string fname, boost::shared_ptr<PPointCloud> cld)
+{
+    pcl::PCDWriter writer;
+
+    int r = writer.writeBinaryCompressed(fname, *cld);
+    switch (r)
+    {
+    case -1:
+        std::cerr << __FUNCTION__ << " general error" << std::endl;
+        return;
+    case -2:
+        std::cerr << __FUNCTION__ << " input cloud is too large" << std::endl;
+        return;
+    default:
+        break;
+    }
 }
 
-void rawcallback(PandarPacketsArray *array) {
-    // printf("array size: %d\n", array->size());
+void lidarCallback(boost::shared_ptr<PPointCloud> cld, double timestamp)
+{
+    std::stringstream fname;
+
+    // Create a per callback file name
+    fname << timestamp << ".pcd";
+
+    // Don't know how compute intensive PCD compression is so launch
+    // a thread to do the compression and file write
+    std::thread writerThread(writePCDthread, fname.str(), cld);
+
+    // Thread such run and die without join
+    writerThread.detach();
 }
 
-int main(int argc, char** argv) {
+void rawcallback(PandarPacketsArray *array)
+{
+}
+
+int main(int argc, char **argv)
+{
     boost::shared_ptr<PandarSwiftSDK> spPandarSwiftSDK;
-    spPandarSwiftSDK.reset(new PandarSwiftSDK(std::string("192.168.1.201"), 2368, 10110, std::string("Pandar128"), \
-                                std::string("../params/Pandar128_Correction.csv"), \
-                                std::string("../params/Pandar128_Firetimes.csv"), \
-                                std::string(""), lidarCallback, rawcallback, gpsCallback, \
-                                std::string(""), \
-                                std::string(""), \
-                                std::string(""), \
-                                0, 0, std::string("both_point_raw"), false));
-    while (true) {
+    spPandarSwiftSDK.reset(new PandarSwiftSDK(std::string("192.168.1.201"), 2368, 10110, std::string("Pandar128"),
+                                              std::string("../params/Pandar128_Correction.csv"),
+                                              std::string("../params/Pandar128_Firetimes.csv"),
+                                              std::string(""), lidarCallback, rawcallback, gpsCallback,
+                                              std::string(""),
+                                              std::string(""),
+                                              std::string(""),
+                                              0, 0, std::string("both_point_raw"), false));
+    while (true)
+    {
         sleep(100);
     }
     return 0;
