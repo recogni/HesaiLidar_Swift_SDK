@@ -69,7 +69,7 @@ int main(int argc, char **argv)
                                               std::string(""),
                                               std::string(""),
                                               std::string(""),
-                                              0, 0, std::string("both_point_raw"), false));
+                                              0, 0, std::string("point"), false));
     while (true)
     {
         sleep(100);
