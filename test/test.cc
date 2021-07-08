@@ -45,7 +45,7 @@ void lidarCallback(boost::shared_ptr<PPointCloud> cld, double timestamp)
     std::stringstream fname;
 
     // Create a per callback file name
-    fname << timestamp << ".pcd";
+    fname << (unsigned long long) (timestamp*100) << ".pcd";
 
     // Don't know how compute intensive PCD compression is so launch
     // a thread to do the compression and file write
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
                                               std::string(""),
                                               std::string(""),
                                               std::string(""),
-                                              0, 0, std::string("point"), false));
+                                              0, 0, std::string("both_point_raw"), false));
     while (true)
     {
         sleep(100);
