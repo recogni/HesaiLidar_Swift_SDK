@@ -50,7 +50,7 @@ class Executor {
     /**
     @brief constructs the executor with N worker threads
     */
-    explicit Executor(unsigned n = std::thread::hardware_concurrency());
+    explicit Executor(unsigned n = 4);
     
     /**
     @brief destructs the executor 

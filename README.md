@@ -109,3 +109,23 @@ Set the pcap flie path only when you what to read a pcap
 $ make 
 $ ./PandarSwiftTest
 ```
+## Fine tuning
+To avoid packet drops, adjust the buffer size:
+sudo sysctl --write net.core.rmem_max=52428800
+sudo sysctl --write net.core.rmem_default=52428800
+
+And, the buffer size in the code is already large enough.
+
+## About timestamps
+Currently we are using PTP server based UTC timestamps for lidar.
+
+Argus on Jetson NX reports time since boot.  In addition, there is an extra offset of 7307464 seconds
+(computed empirically). Need to get a precise value of this offset in order to fully synchronize the
+Lidar PCL and raw sensor images.
+
+Take TZ into account (convert to PST, probably)
+Note that 
+```
+date -d "$(who -b | awk '{print $4,$3}' | tr - / )" +%s
+```
+give timestamp when system was booted up

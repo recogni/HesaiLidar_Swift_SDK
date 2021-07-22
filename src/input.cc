@@ -243,9 +243,9 @@ InputSocket::InputSocket(std::string deviceipaddr, uint16_t lidarport, uint16_t 
 	int get_error = getsockopt(m_iSockfd, SOL_SOCKET, SO_NO_CHECK, &getchecksum, &option_int);
 	int nochecksum = 1;
 	int set_error = setsockopt(m_iSockfd, SOL_SOCKET, SO_NO_CHECK, &nochecksum, sizeof(nochecksum));
-	int nRecvBuf = 26214400;
-	setsockopt(m_iSockfd, SOL_SOCKET, SO_RCVBUF, (const char*)&nRecvBuf, sizeof(int));
-	printf("Pandar socket fd is %d\n", m_iSockfd);
+	int nRecvBuf = (2*26214400);
+	int r = setsockopt(m_iSockfd, SOL_SOCKET, SO_RCVBUF, (const char*)&nRecvBuf, sizeof(int));
+	printf("Pandar socket fd is %d setsockopt %d\n", m_iSockfd,r);
 }
 
 /** @brief destructor */

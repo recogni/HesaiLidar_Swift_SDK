@@ -19,6 +19,7 @@
 #include <iostream>
 #include "taskflow.hpp"
 #include "platUtil.h"
+#include <ctime>
 // #define FIRETIME_CORRECTION_CHECK 
 
 static tf::Executor executor;
@@ -781,7 +782,7 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 		t.tm_hour = packet.tail.nUTCTime[3];
 		t.tm_min = packet.tail.nUTCTime[4];
 		t.tm_sec = packet.tail.nUTCTime[5];
-		t.tm_isdst = 0;
+		t.tm_isdst = 1;
 		double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
 		for (int blockid = 0; blockid < packet.head.u8BlockNum; blockid++) {
 			Pandar128Block &block = packet.blocks[blockid];
@@ -872,11 +873,15 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 		t.tm_year = tail->nUTCTime[0];
 		t.tm_mon = tail->nUTCTime[1] - 1;
 		t.tm_mday = tail->nUTCTime[2];
-		t.tm_hour = tail->nUTCTime[3];
+		t.tm_hour = tail->nUTCTime[3]; // TODO: UTC to PDT
 		t.tm_min = tail->nUTCTime[4];
 		t.tm_sec = tail->nUTCTime[5];
 		t.tm_isdst = 0;
 		double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
+		//--KM--debug--double unix_ctime = static_cast<double>(std::time(nullptr));
+		//--KM--debug--printf("==== calcPointXYZIT():: pkt.data[3] == 4:: \n"
+		//--KM--debug--	"unix_second : %.0f; unix_ctime: %.0f (diff: %.0f)\n",
+		//--KM--debug--	unix_second, unix_ctime, unix_ctime-unix_second);
 		int index = 0;
 		index += PANDAR128_HEAD_SIZE;
 		for (int blockid = 0; blockid < header->u8BlockNum; blockid++) {
@@ -972,7 +977,7 @@ void PandarSwiftSDK::calcQT128PointXYZIT(PandarPacket &pkt, int cursor) {
 				PANDAR128_AZIMUTH_SIZE * header->u8BlockNum + 
 				PANDAR128_CRC_SIZE + 
 				(header->hasFunctionSafety()? PANDAR128_FUNCTION_SAFETY_SIZE : 0));
-  if (pkt.data[0] != 0xEE && pkt.data[1] != 0xFF) {    
+  if (pkt.data[0] != 0xEE && pkt.data[1] != 0xFF) {
     return ;
   }
 
@@ -985,6 +990,7 @@ void PandarSwiftSDK::calcQT128PointXYZIT(PandarPacket &pkt, int cursor) {
 	t.tm_sec = tail->nUTCTime[5];
 	t.tm_isdst = 0;
 	double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
+	printf("==== calcQT128PointXYZIT():: unix_second : %.0f (zoneSeconds: %d)\n", unix_second, m_iTimeZoneSecond);
 	int index = 0;
 	index += PANDAR128_HEAD_SIZE;
 	for (int blockid = 0; blockid < header->u8BlockNum; blockid++) {
