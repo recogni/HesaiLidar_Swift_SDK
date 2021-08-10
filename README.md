@@ -109,6 +109,33 @@ Set the pcap flie path only when you what to read a pcap
 $ make 
 $ ./PandarSwiftTest
 ```
+
+## Inititial Set up
+Check status of the firewall:
+```
+sudo ufw status
+```
+
+Disable firewall for certain ports and services
+### Allow ptpd
+```
+sudo ufw allow ptpd
+```
+
+### Allow ports for lidar communication
+TCP/9347 (command port) and UDP/2368 (data port)
+```
+sudo ufw allow 9347/tcp comment 'Open Lidar control port'
+sudo ufw allow 2368/udp comment 'Open Lidar data port'
+```
+
+### View all added rules
+```
+sudo ufw show added
+```
+
+
+
 ## Fine tuning
 To avoid packet drops, adjust the buffer size:
 sudo sysctl --write net.core.rmem_max=52428800
