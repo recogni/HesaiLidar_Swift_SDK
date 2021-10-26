@@ -771,7 +771,75 @@ void PandarSwiftSDK::changeReturnBlockSize() {
 	}
 }
 
+void decodeIMU(PandarPacket &pkt, int cursor, double unix_second) {
+  auto header = (PandarQT128Head*)(&pkt.data[0]);  
+  auto tail = (PandarQT128Tail*)(&pkt.data[0] + PANDAR128_HEAD_SIZE + 
+				 (header->hasConfidence() ? PANDAR128_UNIT_WITH_CONFIDENCE_SIZE * header->u8LaserNum * header->u8BlockNum : PANDAR128_UNIT_WITHOUT_CONFIDENCE_SIZE * header->u8LaserNum * header->u8BlockNum) + 
+				 PANDAR128_AZIMUTH_SIZE * header->u8BlockNum + 
+				 PANDAR128_CRC_SIZE + 
+				 (header->hasFunctionSafety()? PANDAR128_FUNCTION_SAFETY_SIZE : 0));
+  
+  static bool first_time = true;
+  
+  struct __attribute__ ((__packed__)) imu_data {
+    unsigned short temp;
+    unsigned short accel_unit;
+    unsigned short angular_unit;
+    unsigned int timestamp;
+    short x_accel;
+    short y_accel;
+    short z_accel;
+    short x_angular_vel;
+    short y_angular_vel;
+    short z_angular_vel;
+  } imu_data_t;
+
+  struct imu_data id;
+  static struct imu_data first;
+  static pthread_mutex_t printf_lock = PTHREAD_MUTEX_INITIALIZER;
+  
+  if (first_time) {
+    // Copy IMU data from packet for "alignment of types"
+    memcpy((void *)&first, (const void *)tail + sizeof(PandarQT128Tail), sizeof(struct imu_data));
+    first_time = false;
+  }
+
+  // Copy IMU data from packet for "alignment of types"
+  memcpy((void *)&id, (const void *)tail + sizeof(PandarQT128Tail), sizeof(struct imu_data));
+
+  // Multiple worker threads require this print lock
+  pthread_mutex_lock(&printf_lock);
+  printf("IMU, %f, %u, %u, %u, %d, %d, %d, %d, %d, %d\n",
+	 unix_second,
+	 id.timestamp,
+	 id.accel_unit,
+	 id.angular_unit,
+	 id.x_accel,
+	 id.y_accel,
+	 id.z_accel,
+	 id.x_angular_vel,
+	 id.y_angular_vel,
+	 id.z_angular_vel);
+  pthread_mutex_unlock(&printf_lock);
+
+  if (false) {
+    printf("IMU Temp                %u\n",  id.temp);
+    printf("    Timestamp           %d\n",  id.timestamp);
+    printf("    Accel Unit          %u\n",  id.accel_unit);
+    printf("    Ang   Unit          %u\n",  id.angular_unit);
+    printf("    X Accel             %d\n",  first.x_accel - id.x_accel);
+    printf("    Y Accel             %d\n",  first.y_accel - id.y_accel);
+    printf("    Z Accel             %d\n",  first.z_accel - id.z_accel);
+    printf("    X Angular           %d\n",  first.x_angular_vel - id.x_angular_vel);
+    printf("    Y Angular           %d\n",  first.y_angular_vel - id.y_angular_vel);
+    printf("    Z Angular           %d\n",  first.z_angular_vel - id.z_angular_vel);
+  }
+}
+
 void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
+
+
+  
 	if (pkt.data[3] == 3){
 		Pandar128PacketVersion13 packet;
 		memcpy(&packet, &pkt.data[0], sizeof(Pandar128PacketVersion13));
@@ -784,6 +852,7 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 		t.tm_sec = packet.tail.nUTCTime[5];
 		t.tm_isdst = 1;
 		double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
+
 		for (int blockid = 0; blockid < packet.head.u8BlockNum; blockid++) {
 			Pandar128Block &block = packet.blocks[blockid];
 			int mode = packet.tail.nShutdownFlag & 0x03;
@@ -878,6 +947,7 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 		t.tm_sec = tail->nUTCTime[5];
 		t.tm_isdst = 0;
 		double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
+		decodeIMU(pkt,cursor,unix_second);		
 		//--KM--debug--double unix_ctime = static_cast<double>(std::time(nullptr));
 		//--KM--debug--printf("==== calcPointXYZIT():: pkt.data[3] == 4:: \n"
 		//--KM--debug--	"unix_second : %.0f; unix_ctime: %.0f (diff: %.0f)\n",
@@ -969,6 +1039,8 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 	}
 }
 
+
+
 void PandarSwiftSDK::calcQT128PointXYZIT(PandarPacket &pkt, int cursor) {
 
 	auto header = (PandarQT128Head*)(&pkt.data[0]);
@@ -980,7 +1052,7 @@ void PandarSwiftSDK::calcQT128PointXYZIT(PandarPacket &pkt, int cursor) {
   if (pkt.data[0] != 0xEE && pkt.data[1] != 0xFF) {
     return ;
   }
-
+  
 	struct tm t = {0};
 	t.tm_year = tail->nUTCTime[0];
 	t.tm_mon = tail->nUTCTime[1] - 1;
@@ -990,6 +1062,7 @@ void PandarSwiftSDK::calcQT128PointXYZIT(PandarPacket &pkt, int cursor) {
 	t.tm_sec = tail->nUTCTime[5];
 	t.tm_isdst = 0;
 	double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
+	decodeIMU(pkt,cursor,unix_second);
 	printf("==== calcQT128PointXYZIT():: unix_second : %.0f (zoneSeconds: %d)\n", unix_second, m_iTimeZoneSecond);
 	int index = 0;
 	index += PANDAR128_HEAD_SIZE;
