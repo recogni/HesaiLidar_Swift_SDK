@@ -155,4 +155,9 @@ Note that
 ```
 date -d "$(who -b | awk '{print $4,$3}' | tr - / )" +%s
 ```
-give timestamp when system was booted up
+gives timestamp when system was booted up
+
+```
+date +%s
+```
+give current system timestamp (seconds since epoch)
