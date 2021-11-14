@@ -801,7 +801,7 @@ void decodeIMU(PandarPacket &pkt, int cursor, double unix_second) {
   if (first_time) {
     // Copy IMU data from packet for "alignment of types"
     memcpy((void *)&first, (const char *)tail + sizeof(PandarQT128Tail), sizeof(struct imu_data));
-    printf("IMU, msecs.usecs, x_acc, y_acc, z_acc, x_ang_vel, y_ang_vel, z_ang_vel\n");
+    printf("IMU, stamp msecs, x_acc mg, y_acc mg, z_acc mg, x_ang_vel mdps, y_ang_vel mdps, z_ang_vel mdps\n");
     first_time = false;
   }
 
@@ -809,19 +809,18 @@ void decodeIMU(PandarPacket &pkt, int cursor, double unix_second) {
   memcpy((void *)&id, (const char *)tail + sizeof(PandarQT128Tail), sizeof(struct imu_data));
 
   double tstamp_ms = unix_second * 1000.0 + static_cast<double>(tail->nTimestamp) / 1000.0;
-  // Removed following from print:
-  // id.accel_unit = 448 constant (0.000448 Gs)
-  // id.angular_unit = 14000 constant
+  // id.accel_unit = constant; 0.488mg (g=standard gravity)
+  // id.angular_unit = constant; 140 mdps (millidegrees per sec)
   // Multiple worker threads require this print lock
   pthread_mutex_lock(&printf_lock);
-  printf("IMU, %.3f, %d, %d, %d, %d, %d, %d\n",
+  printf("IMU, %.3f, %.3f, %.3f, %.3f, %d, %d, %d\n",
 	 tstamp_ms,
-	 id.x_accel,
-	 id.y_accel,
-	 id.z_accel,
-	 id.x_angular_vel,
-	 id.y_angular_vel,
-	 id.z_angular_vel);
+	 static_cast<double>(id.x_accel) * 0.488,
+	 static_cast<double>(id.y_accel) * 0.488,
+	 static_cast<double>(id.z_accel) * 0.488,
+	 id.x_angular_vel * 140,
+	 id.y_angular_vel * 140,
+	 id.z_angular_vel * 140);
   pthread_mutex_unlock(&printf_lock);
 
   if (false) {
