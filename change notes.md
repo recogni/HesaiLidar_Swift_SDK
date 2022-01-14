@@ -91,3 +91,20 @@ PandarSwiftSDK_1.2.15
 1. Support ubuntu 20.04
 2. Update firetime correction of QT128
 3. Add c type interface
+
+Friday, July 23th, 2021 17:30
+##version
+PandarSwiftSDK_1.2.17
+
+##modify
+1. Support coordinate correction of QT128 
+
+
+Friday, August 24th, 2021 17:30
+##version
+PandarSwiftSDK_1.2.19
+
+##modify
+1. Support to parser UDP1.3 packet when connect to lidar
+2. Fix bug that parser gps packet as point cloud packet
+3. Fix bug in calculate taskflow end

@@ -90,6 +90,8 @@ bool PandarSwiftDriver::poll(void)
 			{
 				m_pPandarSwiftSDK->processGps(&packet); // gps callback
 			}
+			i--;
+			continue;
 		}
 		if (rc > 0)
 			return false; // end of file reached?
