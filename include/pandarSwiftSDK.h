@@ -271,7 +271,7 @@ typedef struct PacketsBuffer_s {
 			if(m_iterPush == m_iterTaskBegin) {
 				static uint32_t tmp = m_iterTaskBegin - m_buffers.begin();
 				if(m_iterTaskBegin - m_buffers.begin() != tmp) {
-					printf("buffer don't have space!,%d\n",m_iterTaskBegin - m_buffers.begin());
+					printf("buffer doesn't have space! (%ld)\n", m_iterTaskBegin - m_buffers.begin());
 					tmp = m_iterTaskBegin - m_buffers.begin();
 				}
 				lastOverflowed = true;
