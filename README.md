@@ -21,8 +21,9 @@ Cmake version requirement:Cmake 3.8.0 or above
 G++ version requirement:G++ 7.5 or above
 ```
 **Library Dependencies: libpcl-dev + libpcap-dev + libyaml-cpp-dev + libboost-dev**
+[Add libzstd-dev: This was not installed on AGX]
 ```
-$ sudo apt install libpcl-dev libpcap-dev libyaml-cpp-dev libboost-dev
+$ sudo apt install libpcl-dev libpcap-dev libyaml-cpp-dev libboost-dev libzstd-dev
 ```
 
 ## Clone
