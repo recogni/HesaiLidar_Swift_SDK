@@ -839,6 +839,7 @@ void decodeIMU(PandarPacket &pkt, int cursor, double unix_second) {
 }
 
 void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
+	static double prev_tstamp_ms = 0;
   
 	if (pkt.data[3] == 3){
 		Pandar128PacketVersion13 packet;
@@ -947,10 +948,20 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 		t.tm_sec = tail->nUTCTime[5];
 		t.tm_isdst = 0;
 		double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
-		decodeIMU(pkt,cursor,unix_second);
-		//--KM--debug--double unix_ctime = static_cast<double>(std::time(nullptr));
-		//--KM--debug--printf("===== DEBUG: %d: unix_second : %.0f; unix_ctime: %.0f (diff: %.0f)\n", __LINE__,
-		//--KM--debug--       unix_second, unix_ctime, unix_ctime-unix_second);
+                double tstamp_ms = unix_second * 1000.0 + static_cast<double>(tail->nTimestamp) / 1000.0;
+		if (tstamp_ms > prev_tstamp_ms + 2.0) {
+			if (false) {  // KM: temp debug 2022-09-08
+                                struct timespec ts_real;
+                                clock_gettime(CLOCK_REALTIME, &ts_real);
+                                double local_tstamp_ms = static_cast<double>(ts_real.tv_sec * 1000.0 + ts_real.tv_nsec / 1e6);
+		                printf("===== DEBUG: %d: lidar_t_ms : %.0f; local_t_ms: %.0f (diff: %.0f)\n", __LINE__,
+		                       tstamp_ms, local_tstamp_ms, local_tstamp_ms-tstamp_ms);
+			}
+			// dump IMU data every 2ms; not for every packet
+		        decodeIMU(pkt,cursor,unix_second);
+			prev_tstamp_ms = tstamp_ms;
+		}
+
 		int index = 0;
 		index += PANDAR128_HEAD_SIZE;
 		for (int blockid = 0; blockid < header->u8BlockNum; blockid++) {
