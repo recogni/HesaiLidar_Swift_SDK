@@ -13,66 +13,92 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-#include "pandarSwiftSDK.h"
-
+#include <chrono>
 #include <string>
 #include <thread>
 
-void gpsCallback(double timestamp)
-{
+#include "pandarSwiftSDK.h"
+
+using namespace std;
+
+static bool keep_running = true;
+
+void gpsCallback(double timestamp) {}
+
+void writePCDthread(string fname, boost::shared_ptr<PPointCloud> cld) {
+	pcl::PCDWriter writer;
+
+	//int r = writer.writeBinaryCompressed(fname, *cld);
+	int r = writer.writeBinary(fname, *cld);
+	switch (r) {
+	case -1:
+		cerr << __FUNCTION__ << " general error" << endl;
+		return;
+	case -2:
+		cerr << __FUNCTION__ << " input cloud is too large" << endl;
+		return;
+	default:
+		break;
+	}
 }
 
-void writePCDthread(std::string fname, boost::shared_ptr<PPointCloud> cld)
-{
-    pcl::PCDWriter writer;
+void lidarCallback(boost::shared_ptr<PPointCloud> cld, double timestamp) {
+	stringstream fname;
 
-    int r = writer.writeBinaryCompressed(fname, *cld);
-    switch (r)
-    {
-    case -1:
-        std::cerr << __FUNCTION__ << " general error" << std::endl;
-        return;
-    case -2:
-        std::cerr << __FUNCTION__ << " input cloud is too large" << std::endl;
-        return;
-    default:
-        break;
-    }
+	if (!keep_running) {
+		return;
+	}
+	// Create a per callback file name
+	fname << static_cast<unsigned long long>(timestamp * 1000) << ".pcd";
+
+	// Don't know how compute intensive PCD compression is so launch
+	// a thread to do the compression and file write
+	thread writerThread(writePCDthread, fname.str(), cld);
+
+	// Thread such run and die without join
+	writerThread.detach();
 }
 
-void lidarCallback(boost::shared_ptr<PPointCloud> cld, double timestamp)
-{
-    std::stringstream fname;
-
-    // Create a per callback file name
-    fname << (unsigned long long) (timestamp*1000) << ".pcd";
-
-    // Don't know how compute intensive PCD compression is so launch
-    // a thread to do the compression and file write
-    std::thread writerThread(writePCDthread, fname.str(), cld);
-
-    // Thread such run and die without join
-    writerThread.detach();
+void rawcallback(PandarPacketsArray *array) {
+	if (!keep_running) {
+		return;
+	}
+	int  i	   = 0;
+	bool myvar = false;
+	for (auto it = array->begin(); it != array->end(); ++it) {
+		// it->size is 861
+		i++;
+	}
+	// cout << "--->\tNumber of packets:" << i << endl;
 }
 
-void rawcallback(PandarPacketsArray *array)
-{
-}
+int main(int argc, char **argv) {
+	auto capms = 10000ms; // By default capture for 10 seconds
 
-int main(int argc, char **argv)
-{
-    boost::shared_ptr<PandarSwiftSDK> spPandarSwiftSDK;
-    spPandarSwiftSDK.reset(new PandarSwiftSDK(std::string("192.168.1.201"), 2368, 10110, std::string("Pandar128"),
-                                              std::string("../params/Pandar128_Correction.csv"),
-                                              std::string("../params/Pandar128_Firetimes.csv"),
-                                              std::string(""), lidarCallback, rawcallback, gpsCallback,
-                                              std::string(""),
-                                              std::string(""),
-                                              std::string(""),
-                                              0, 0, std::string("both_point_raw"), false));
-    while (true)
-    {
-        sleep(100);
-    }
-    return 0;
+	if (argc > 1) {
+		capms = chrono::milliseconds(static_cast<long long>(1000 * atof(argv[1])));
+	}
+
+	boost::shared_ptr<PandarSwiftSDK> spPandarSwiftSDK;
+	spPandarSwiftSDK.reset(new PandarSwiftSDK(
+	    std::string("192.168.1.201"), 2368, 10110, std::string("Pandar128"),
+	    std::string("../params/Pandar128_Correction.csv"), std::string("../params/Pandar128_Firetimes.csv"),
+	    std::string(""), lidarCallback, rawcallback, gpsCallback, std::string(""), std::string(""), std::string(""),
+	    0, 0, std::string("both_point_raw"), false));
+
+	if (capms < 0ms) {
+		cout << "Capturing indefinitely (" << capms.count() / 1000.0 << " specified)\n";
+		while (true) {
+			this_thread::sleep_for(chrono::milliseconds(100));
+		}
+	} else {
+		cout << "Capturing for " << capms.count() / 1000.0 << " seconds\n";
+		this_thread::sleep_for(capms);
+		keep_running = false;
+	}
+
+	spPandarSwiftSDK->stop();
+	this_thread::sleep_for(chrono::milliseconds(500));  // grace time for writes to complete
+	cout << "Done!" << endl;
+	return 0;
 }
