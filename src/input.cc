@@ -59,7 +59,7 @@ Input::Input(std::string deviceipaddr, uint16_t lidarport){
 
 bool Input::checkPacketSize(PandarPacket *pkt) {
   if(pkt->size < 100)
-  return false;
+  	return false;
   if (pkt->data[0] != 0xEE && pkt->data[1] != 0xFF) {    
     printf("Packet with invaild delimiter\n");
     return false;
@@ -306,7 +306,7 @@ int InputSocket::getPacket(PandarPacket *pkt) {
     	}
   	}
 	if(!m_bGetUdpVersion)
-			return 0;
+		return 0;
 	if (pkt->size == 512) {
 		// ROS_ERROR("GPS");
 		return 2;

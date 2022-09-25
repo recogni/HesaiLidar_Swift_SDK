@@ -959,7 +959,7 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 				       tstamp_ms, local_tstamp_ms, local_tstamp_ms - tstamp_ms);
 			}
 			// dump IMU data every 2ms; not for every packet
-			// decodeIMU(pkt, cursor, unix_second);
+			decodeIMU(pkt, cursor, unix_second);
 			prev_tstamp_ms = tstamp_ms;
 		}
 
