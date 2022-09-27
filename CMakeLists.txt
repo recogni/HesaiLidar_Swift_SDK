@@ -48,13 +48,29 @@ target_link_libraries(${PROJECT_NAME}
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
     find_package(PCL REQUIRED)
-    add_executable(PandarSwiftTest
-        test/test.cc
+
+    add_executable(PandarCapture
+        test/pandar_capture.cc
+    )
+    add_executable(PandarDownload
+        test/download.cc
+    )
+    add_executable(PcapToPcd
+        test/pcap_to_pcd.cc
     )
 
-    target_link_libraries(PandarSwiftTest
+    target_link_libraries(PandarCapture
         ${PROJECT_NAME}
         ${Boost_LIBRARIES}
         ${PCL_IO_LIBRARIES}
     )
+    target_link_libraries(PandarDownload
+        ${PROJECT_NAME}
+    )
+    target_link_libraries(PcapToPcd
+        ${PROJECT_NAME}
+        ${Boost_LIBRARIES}
+        ${PCL_IO_LIBRARIES}
+    )
+
 endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
