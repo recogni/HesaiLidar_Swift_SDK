@@ -195,14 +195,16 @@ void PandarSwiftSDK::loadCorrectionFile() {
 
 int PandarSwiftSDK::loadCorrectionString(std::string correction_content) {
     std::istringstream ifs(correction_content);
-	std::string line;
-	if(std::getline(ifs, line)) {  // first line "Laser id,Elevation,Azimuth"
+	std::string line_;
+	if(std::getline(ifs, line_)) {  // first line "Laser id,Elevation,Azimuth"
 		printf("Parse Lidar Correction...\n");
 	}
 	float pitchList[PANDAR128_LASER_NUM];
 	float azimuthList[PANDAR128_LASER_NUM];
 	int lineCounter = 0;
-	while (std::getline(ifs, line)) {
+	while (std::getline(ifs, line_)) {
+		std::string line = line_;
+		//printf("Line: [%s], Line length: %ld\n", line.c_str(), line.length());
 		if(line.length() < strlen("1,1,1")) {
 			return -1;
 		} 
@@ -210,7 +212,7 @@ int PandarSwiftSDK::loadCorrectionString(std::string correction_content) {
 			lineCounter++;
 		}
 		float elev, azimuth;
-		int lineId = 0;
+		int lineId = -1;
 		std::stringstream ss(line);
 		std::string subline;
 		std::getline(ss, subline, ',');
@@ -220,11 +222,15 @@ int PandarSwiftSDK::loadCorrectionString(std::string correction_content) {
 		std::getline(ss, subline, ',');
 		std::stringstream(subline) >> azimuth;
 		if(lineId != lineCounter) {
-			printf("laser id error %d %d\n", lineId, lineCounter);
+			printf("Line: [%d] (C str len: %ld)\n", int(line.c_str()[0]), strlen(line.c_str()));
+			printf("laser id error lineID: %d lineCounter: %d\n", lineId, lineCounter);
 			return -1;
 		}
 		pitchList[lineId - 1] = elev;
 		azimuthList[lineId - 1] = azimuth;
+		if (lineCounter >= 128) { // Brute force: the current code doesn't handle last newline
+			break;
+		}
 	}
 	for (int i = 0; i < lineCounter; ++i) {
 		m_fElevAngle[i] = pitchList[i];
@@ -839,7 +845,7 @@ void decodeIMU(PandarPacket &pkt, int cursor, double unix_second) {
 }
 
 void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
-	static double prev_tstamp_ms = 0;
+	// static double prev_tstamp_ms = 0;
   
 	if (pkt.data[3] == 3){
 		Pandar128PacketVersion13 packet;
@@ -948,20 +954,20 @@ void PandarSwiftSDK::calcPointXYZIT(PandarPacket &pkt, int cursor) {
 		t.tm_sec = tail->nUTCTime[5];
 		t.tm_isdst = 0;
 		double unix_second = static_cast<double>(mktime(&t) + m_iTimeZoneSecond);
-		double tstamp_ms   = unix_second * 1000.0 + static_cast<double>(tail->nTimestamp) / 1000.0;
-		if (tstamp_ms > prev_tstamp_ms + 2.0) {
-			if (false) {  // KM: temp debug 2022-09-08
-				struct timespec ts_real;
-				clock_gettime(CLOCK_REALTIME, &ts_real);
-				double local_tstamp_ms =
-				    static_cast<double>(ts_real.tv_sec * 1000.0 + ts_real.tv_nsec / 1e6);
-				printf("===== DEBUG: %d: lidar_t_ms : %.0f; local_t_ms: %.0f (diff: %.0f)\n", __LINE__,
-				       tstamp_ms, local_tstamp_ms, local_tstamp_ms - tstamp_ms);
-			}
-			// dump IMU data every 2ms; not for every packet
-			decodeIMU(pkt, cursor, unix_second);
-			prev_tstamp_ms = tstamp_ms;
-		}
+		// double tstamp_ms   = unix_second * 1000.0 + static_cast<double>(tail->nTimestamp) / 1000.0;
+		// if (tstamp_ms > prev_tstamp_ms + 2.0) {
+		// 	if (false) {  // KM: temp debug 2022-09-08
+		// 		struct timespec ts_real;
+		// 		clock_gettime(CLOCK_REALTIME, &ts_real);
+		// 		double local_tstamp_ms =
+		// 		    static_cast<double>(ts_real.tv_sec * 1000.0 + ts_real.tv_nsec / 1e6);
+		// 		printf("===== DEBUG: %d: lidar_t_ms : %.0f; local_t_ms: %.0f (diff: %.0f)\n", __LINE__,
+		// 		       tstamp_ms, local_tstamp_ms, local_tstamp_ms - tstamp_ms);
+		// 	}
+		// 	// dump IMU data every 2ms; not for every packet
+		// 	decodeIMU(pkt, cursor, unix_second);
+		// 	prev_tstamp_ms = tstamp_ms;
+		// }
 
 		int index = 0;
 		index += PANDAR128_HEAD_SIZE;

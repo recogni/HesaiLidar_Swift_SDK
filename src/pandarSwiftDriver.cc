@@ -106,8 +106,9 @@ bool PandarSwiftDriver::poll(void)
 	m_iPktPopIndex = temp;
 	if (m_bNeedPublish == false)
 		m_bNeedPublish = true;
-	else
-		printf("CPU not fast enough, data not published yet, new data comming!!!\n");
+	// In raw-only mode, following results in errors as no one updates m_bNeedPublish
+	// else
+	// 	printf("CPU not fast enough, data not published yet, new data comming!!!\n");
 	return true;
 }
 

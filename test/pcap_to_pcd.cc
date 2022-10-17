@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 	    std::string("../params/Pandar128_Firetimes.csv"), std::string(pcap_file), lidarCallback, rawcallback,
 	    gpsCallback, std::string(""), std::string(""), std::string(""), 0, 0, std::string("point"), false));
 
-	std::cout << "Generating PCD files from input PCAP file " << pcap_file << " specified)\n";
+	std::cout << "Generating PCD files from input PCAP file " << pcap_file << "\n";
 	int tag_done = 0;
 	while (tag_done < 2) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
