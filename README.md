@@ -145,6 +145,7 @@ sudo sysctl --write net.core.rmem_max=52428800
 sudo sysctl --write net.core.rmem_default=52428800
 
 And, the buffer size in the code is already large enough.
+You can also add this to /etc/sysctl.conf
 
 ## About timestamps
 Currently we are using PTP server based UTC timestamps for lidar.

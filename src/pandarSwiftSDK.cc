@@ -22,6 +22,7 @@
 #include <ctime>
 // #define FIRETIME_CORRECTION_CHECK 
 // #define COORDINATE_CORRECTION_CHECK
+#define DECODE_IMU 0
 
 static tf::Executor executor;
 float degreeToRadian(float degree) { return degree * M_PI / 180.0f; }
@@ -195,24 +196,27 @@ void PandarSwiftSDK::loadCorrectionFile() {
 
 int PandarSwiftSDK::loadCorrectionString(std::string correction_content) {
     std::istringstream ifs(correction_content);
-	std::string line_;
-	if(std::getline(ifs, line_)) {  // first line "Laser id,Elevation,Azimuth"
+	std::string line;
+	if(std::getline(ifs, line)) {  // first line "Laser id,Elevation,Azimuth"
 		printf("Parse Lidar Correction...\n");
 	}
 	float pitchList[PANDAR128_LASER_NUM];
 	float azimuthList[PANDAR128_LASER_NUM];
 	int lineCounter = 0;
-	while (std::getline(ifs, line_)) {
-		std::string line = line_;
-		//printf("Line: [%s], Line length: %ld\n", line.c_str(), line.length());
-		if(line.length() < strlen("1,1,1")) {
+	while (std::getline(ifs, line)) {
+		int llen = line.length();
+		lineCounter++;
+	    //printf("lineCounter: %d, line length: %d\n", lineCounter, llen);
+		if (lineCounter > 128) { // Brute force: the current code doesn't handle last newline
+			--lineCounter;
+			break;
+		}
+		if (llen < strlen("1,1,1")) {
+            printf("Error! Line length: %ld, lineCounter: %d\n", line.length(), lineCounter);
 			return -1;
-		} 
-		else {
-			lineCounter++;
 		}
 		float elev, azimuth;
-		int lineId = -1;
+		int lineId = 0;
 		std::stringstream ss(line);
 		std::string subline;
 		std::getline(ss, subline, ',');
@@ -222,15 +226,11 @@ int PandarSwiftSDK::loadCorrectionString(std::string correction_content) {
 		std::getline(ss, subline, ',');
 		std::stringstream(subline) >> azimuth;
 		if(lineId != lineCounter) {
-			printf("Line: [%d] (C str len: %ld)\n", int(line.c_str()[0]), strlen(line.c_str()));
-			printf("laser id error lineID: %d lineCounter: %d\n", lineId, lineCounter);
+			printf("Error! laser id doesn't match. lineId: %d, lineCounter: %d\n", lineId, lineCounter);
 			return -1;
 		}
 		pitchList[lineId - 1] = elev;
 		azimuthList[lineId - 1] = azimuth;
-		if (lineCounter >= 128) { // Brute force: the current code doesn't handle last newline
-			break;
-		}
 	}
 	for (int i = 0; i < lineCounter; ++i) {
 		m_fElevAngle[i] = pitchList[i];
@@ -492,7 +492,7 @@ void PandarSwiftSDK::init() {
 		uint16_t lidarmotorspeed = 0;
 		m_u8UdpVersionMajor = (m_PacketsBuffer.getTaskEnd() - 1)->data[2];
 		m_u8UdpVersionMinor = (m_PacketsBuffer.getTaskEnd() - 1)->data[3];
-		printf("UDP Version is:%d.%d", m_u8UdpVersionMajor, m_u8UdpVersionMinor);
+		//printf("UDP Version is:%d.%d", m_u8UdpVersionMajor, m_u8UdpVersionMinor);
 		switch (m_u8UdpVersionMajor){
 		case 1:
 			switch (m_u8UdpVersionMinor)
@@ -571,7 +571,7 @@ void PandarSwiftSDK::init() {
 			lidarmotorspeed = MOTOR_SPEED_600; //changing the speed,give enough size
 		}
 		m_iMotorSpeed = lidarmotorspeed;
-		printf("init mode: workermode: %x,return mode: %x,speed: %d\n",m_iWorkMode, m_iReturnMode, m_iMotorSpeed);
+		printf("init mode: workermode: %x, return mode: %x, speed: %d\n",m_iWorkMode, m_iReturnMode, m_iMotorSpeed);
 		printf("UDP version %d.%d \n",m_u8UdpVersionMajor, m_u8UdpVersionMinor);
 		changeAngleSize();
 		changeReturnBlockSize();
