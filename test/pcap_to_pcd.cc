@@ -94,10 +94,12 @@ int main(int argc, char **argv) {
 
 	std::cout << "Generating PCD files from input PCAP file " << pcap_file << "\n";
 	int tag_done = 0;
-	while (tag_done < 2) {
+	while (tag_done < 4) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		if (prev_frame_count == frame_count) {
 			tag_done++;
+		} else {
+			tag_done = 0;
 		}
 		prev_frame_count = frame_count;
 	}
