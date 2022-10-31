@@ -163,7 +163,7 @@ struct MempoolManager {
 
   // Ctor 
   MempoolManager() { 
-    pools.reserve(std::thread::hardware_concurrency()); 
+    pools.reserve(4); // std::thread::hardware_concurrency()); 
   }
 
   // Dtor
