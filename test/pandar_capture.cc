@@ -28,17 +28,23 @@ void gpsCallback(double timestamp) {}
 void writePCDthread(std::string fname, boost::shared_ptr<PPointCloud> cld) {
 	pcl::PCDWriter writer;
 
-	int r = writer.writeBinaryCompressed(fname, *cld);
-	switch (r) {
-	case -1:
-		std::cerr << __FUNCTION__ << " general error" << std::endl;
-		keep_running = false;
-		return;
-	case -2:
-		std::cerr << __FUNCTION__ << " input cloud is too large" << std::endl;
-		return;
-	default:
-		break;
+	try {
+		int r = writer.writeBinaryCompressed(fname, *cld);
+		switch (r) {
+		case -1:
+			std::cerr << __FUNCTION__ << " general error" << std::endl;
+			keep_running = false;
+			return;
+		case -2:
+			std::cerr << __FUNCTION__ << " input cloud is too large" << std::endl;
+			return;
+		default:
+			break;
+		}
+	} catch (const std::exception& e) {
+		std::cerr << __FUNCTION__ << " exception: " << e.what() << std::endl;
+	} catch (...) {
+		std::cerr << __FUNCTION__ << " unknown error" << std::endl;
 	}
 }
 
