@@ -30,6 +30,7 @@
 #include "tcp_command_client.h"
 #include "point_types.h"
 #include <boost/thread.hpp>
+#include <boost/function.hpp>
 
 #ifndef CIRCLE
 #define CIRCLE (36000)
